@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>СуперСайт</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <table class="layout-table">
+        <!-- Шапка -->
+        <tr>
+            <td colspan="2" id="header">
+                <h1>Неевин Олег / P3210 / вариант 12662</h1>
+            </td>
+        </tr>
+
+        <tr>
+            <td class="canvas-cell">
+                <canvas id="graph" width="600" height="600"></canvas>
+            </td>
+
+            <td class="form-cell">
+                <form id="point-form">
+                    <!-- X -->
+                    <div class="input-group">
+                    <label for="x-select">Изменение X:</label>
+                    <select id="x-select" name="x">
+                        <option value="-4">-4</option>
+                        <option value="-3">-3</option>
+                        <option value="-2">-2</option>
+                        <option value="-1">-1</option>
+                        <option value="0" selected>0</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                    </select>
+                    <span id="x-error" class="error-msg"></span>
+                </div>
+
+
+                    <!-- Y -->
+                    <div class="input-group">
+                        <label for="y-input">Изменение Y (-3 ... 5):</label><br>
+                        <input type="text" id="y-input" name="y" placeholder="Например: 1.5" autocomplete="off">
+                        <span id="y-error" class="error-msg"></span>
+                    </div>
+
+                    <!-- R -->
+                    <div class="input-group">
+                        <label>Изменение R:</label>
+                        <div class="radio-group">
+                            <label><input type="radio" name="r" value="1"> 1</label>
+                            <label><input type="radio" name="r" value="1.5"> 1.5</label>
+                            <label><input type="radio" name="r" value="2"> 2</label>
+                            <label><input type="radio" name="r" value="2.5"> 2.5</label>
+                            <label><input type="radio" name="r" value="3"> 3</label>
+                        </div>
+                        <span id="r-error" class="error-msg"></span>
+                    </div>
+
+                    <button type="submit" id="submit-btn">Проверить точку</button>
+                </form>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <p id="info"></p>
+                <table id="results-table">
+                    <thead>
+                        <tr>
+                            <th>X</th>
+                            <th>Y</th>
+                            <th>R</th>
+                            <th>Результат</th>
+                            <th>Время проверки</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+
+                </table>
+
+
+            </td>
+        </tr>
+    </table>
+
+    <script src="./script.js"></script>
+</body>
+</html>
