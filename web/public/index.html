@@ -12,7 +12,7 @@
         <!-- Шапка -->
         <tr>
             <td colspan="2" id="header">
-                <h1>Неевин Олег / P3210 / вариант 12662</h1>
+                <h1>Неевин Олег / P3210 / вариант хз</h1>
             </td>
         </tr>
 
@@ -67,23 +67,57 @@
         </tr>
         <tr>
             <td colspan="2">
+                <label for="size-select">Точек на странице:</label>
+                <select id="size-select">
+                    <option value="5">5</option>
+                    <option value="10" selected>10</option>
+                    <option value="20">20</option>
+                </select>
                 <p id="info"></p>
-                <table id="results-table">
+            </td>
+        </tr>
+        <tr>
+            <td class="node left" data-node="left">
+                <h2>Левая палочка</h2>
+                <table class="results">
                     <thead>
-                        <tr>
-                            <th>X</th>
-                            <th>Y</th>
-                            <th>R</th>
-                            <th>Результат</th>
-                            <th>Время проверки</th>
-                        </tr>
+                    <tr>
+                        <th>X</th>
+                        <th>Y</th>
+                        <th>R</th>
+                        <th>Результат</th>
+                        <th>Время проверки</th>
+                    </tr>
                     </thead>
-                    <tbody>
-                    </tbody>
-
+                    <tbody></tbody>
                 </table>
-
-
+                <div class="pager">
+                    <button type="button" class="prev"><-</button>
+                    Страница <input type="text" class="go" autocomplete="off"> из <span class="num"></span>
+                    <button type="button" class="next">-></button>
+                </div>
+                <span class="msg"></span>
+            </td>
+            <td class="node right" data-node="right">
+                <h2>Правая палочка</h2>
+                <table class="results">
+                    <thead>
+                    <tr>
+                        <th>X</th>
+                        <th>Y</th>
+                        <th>R</th>
+                        <th>Результат</th>
+                        <th>Время проверки</th>
+                    </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+                <div class="pager">
+                    <button type="button" class="prev">←</button>
+                    Страница <input type="text" class="go" autocomplete="off"> из <span class="num"></span>
+                    <button type="button" class="next">→</button>
+                </div>
+                <span class="msg"></span>
             </td>
         </tr>
     </table>

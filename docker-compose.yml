@@ -1,9 +1,19 @@
 services:
-  app:
+  app1:
     build: ./app
+    environment:
+      - NODE=left
+    restart: unless-stopped
+  app2:
+    build: ./app
+    environment:
+      - NODE=right
+    restart: unless-stopped
   web:
     build: ./web
     ports:
       - "8080:80"
     depends_on:
-      - app
+      - app1
+      - app2
+    restart: unless-stopped

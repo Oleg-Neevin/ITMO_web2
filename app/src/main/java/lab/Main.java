@@ -9,6 +9,8 @@ import java.util.*;
 public class Main {
     static final List<String> h = new ArrayList<>();
     static final Set<String> rs = Set.of("1", "1.5", "2", "2.5", "3");
+    static final Set<String> ss = Set.of("5", "10", "20");
+    static final String node = System.getenv().getOrDefault("NODE", "left");
 
     public static void main(String[] args) {
         FCGIInterface f = new FCGIInterface();
@@ -16,18 +18,9 @@ public class Main {
             long t = System.nanoTime();
             String q = FCGIInterface.request.params.getProperty("QUERY_STRING");
             try {
-                if (q != null && !q.isEmpty()) {
-                    Map<String, String> p = parse(q);
-                    int x = vx(p.get("x"));
-                    BigDecimal y = vy(p.get("y"));
-                    BigDecimal r = vr(p.get("r"));
-                    boolean b = hit(x, y.doubleValue(), r.doubleValue());
-                    h.add(String.format("{\"x\":%d,\"y\":%s,\"r\":%s,\"hit\":%b,\"time\":%d}",
-                            x, y.toPlainString(), r.toPlainString(), b, System.currentTimeMillis()));
-                }
-                long micros = (System.nanoTime() - t) / 1000;
-                send("200 OK", String.format("{\"now\":%d,\"micros\":%d,\"history\":[%s]}",
-                        System.currentTimeMillis(), micros, String.join(",", h)));
+                Map<String, String> p = parse(q == null ? "" : q);
+                boolean w = p.containsKey("x") || p.containsKey("y") || p.containsKey("r");
+                send("200 OK", w ? add(p, t) : page(p, t));
             } catch (IllegalArgumentException e) {
                 send("400 Bad Request", "{\"error\":\"" + e.getMessage() + "\"}");
             }
@@ -73,10 +66,52 @@ public class Main {
         return new BigDecimal(s);
     }
 
+    static int vs(String s) {
+        if (s == null) return 10;
+        if (!ss.contains(s)) throw new IllegalArgumentException("bad size");
+        return Integer.parseInt(s);
+    }
+
+    static int vp(String s, int pages) {
+        if (s == null) return 1;
+        if (!s.matches("\\d{1,6}")) throw new IllegalArgumentException("bad page");
+        int n = Integer.parseInt(s);
+        if (n < 1 || n > pages) throw new IllegalArgumentException("bad page");
+        return n;
+    }
+
     static boolean hit(double x, double y, double r) {
         if (x >= 0 && y >= 0) return x + 2 * y <= r;
         if (x <= 0 && y <= 0 && x * x + y * y <= r * r / 4) return true;
         if (x >= 0 && y <= 0) return x <= r && y >= -r;
         return false;
     }
+
+    static String add(Map<String, String> p, long t) {
+        int x = vx(p.get("x"));
+        BigDecimal y = vy(p.get("y"));
+        BigDecimal r = vr(p.get("r"));
+        boolean b = hit(x, y.doubleValue(), r.doubleValue());
+        String s = String.format("{\"x\":%d,\"y\":%s,\"r\":%s,\"hit\":%b,\"time\":%d,\"node\":\"%s\"}",
+                x, y.toPlainString(), r.toPlainString(), b, System.currentTimeMillis(), node);
+        h.add(s);
+        return String.format("{\"node\":\"%s\",\"now\":%d,\"micros\":%d,\"total\":%d,\"point\":%s}",
+                node, System.currentTimeMillis(), (System.nanoTime() - t) / 1000, h.size(), s);
+    }
+
+    static String page(Map<String, String> p, long t) {
+        int s = vs(p.get("size"));
+        int total = h.size();
+        int pages = Math.max(1, (total + s - 1) / s);
+        int n = vp(p.get("page"), pages);
+        int to = total - (n - 1) * s;
+        int from = Math.max(0, to - s);
+        List<String> a = new ArrayList<>(h.subList(from, to));
+        Collections.reverse(a);
+        return String.format("{\"node\":\"%s\",\"now\":%d,\"micros\":%d,\"total\":%d,\"pages\":%d,\"page\":%d,\"items\":[%s]}",
+                node, System.currentTimeMillis(), (System.nanoTime() - t) / 1000,
+                total, pages, n, String.join(",", a));
+    }
+
+
 }

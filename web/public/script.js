@@ -10,14 +10,53 @@ const yInp = document.getElementById('y-input');
 const xErr = document.getElementById('x-error');
 const yErr = document.getElementById('y-error');
 const rErr = document.getElementById('r-error');
-const body = document.querySelector('#results-table tbody');
 const info = document.getElementById('info');
+
+const sizeSel = document.getElementById('size-select');
+
+let sv = {};
+try { sv = JSON.parse(localStorage.getItem('pg')) || {}; } catch (e) {}
+if ([...sizeSel.options].some(o => o.value === sv.size)) sizeSel.value = sv.size;
+
+function save() {
+    const o = {size: sizeSel.value};
+    Object.keys(st).forEach(n => o[n] = st[n].page);
+    try { localStorage.setItem('pg', JSON.stringify(o)); } catch (e) {}
+}
+
+const st = {};
+document.querySelectorAll('.node').forEach(e => {
+    const n = e.dataset.node;
+    const s = {page: Number.isInteger(sv[n]) && sv[n] > 0 ? sv[n] : 1, pages: 1};
+    s.tb = e.querySelector('tbody');
+    s.num = e.querySelector('.num');
+    s.msg = e.querySelector('.msg');
+    s.prev = e.querySelector('.prev');
+    s.next = e.querySelector('.next');
+    s.prev.onclick = () => { s.page--; load(n); };
+    s.go = e.querySelector('.go');
+    s.go.onchange = () => {
+        const v = s.go.value.trim();
+        if (!/^\d+$/.test(v) || +v < 1 || +v > s.pages) {
+            s.go.value = s.page;
+            s.msg.textContent = 'Страница от 1 до ' + s.pages;
+            return;
+        }
+        s.page = +v;
+        load(n);
+    };
+    s.next.onclick = () => { s.page++; load(n); };
+    st[n] = s;
+});
 
 const texts = {
     'bad x': 'Некорректное значение X',
     'bad y': 'Некорректное значение Y',
     'y out of range': 'Y должен быть в диапазоне от -3 до 5',
-    'bad r': 'Некорректное значение R'
+    'bad r': 'Некорректное значение R',
+    'bad page': 'Некорректная страница',
+    'bad size': 'Некорректный размер страницы',
+    'down': 'Узел недоступен'
 };
 
 function getR() {
@@ -127,30 +166,55 @@ function checkY(s) {
     return '';
 }
 
-async function ask(q) {
-    const res = await fetch('/fcgi-bin/?' + q);
-    const d = await res.json();
+async function ask(path, q) {
+    let res, d;
+    try {
+        res = await fetch('/fcgi-bin/' + path + '?' + q);
+        d = await res.json();
+    } catch (e) {
+        throw new Error(texts.down);
+    }
     if (!res.ok) throw new Error(texts[d.error] || d.error);
     return d;
 }
 
-function show(d) {
-    body.innerHTML = '';
-    for (let i = d.history.length - 1; i >= 0; i--) {
-        const e = d.history[i];
-        const tr = document.createElement('tr');
-        const cells = [e.x, e.y, e.r, e.hit ? 'Попадание' : 'Промах',
-            new Date(e.time).toLocaleString('ru-RU')];
-        cells.forEach((v, j) => {
-            const td = document.createElement('td');
-            td.textContent = v;
-            if (j === 3) td.className = e.hit ? 'hit' : 'miss';
-            tr.appendChild(td);
-        });
-        body.appendChild(tr);
-    }
+function tick(d) {
     info.textContent = 'Текущее время: ' + new Date(d.now).toLocaleString('ru-RU') +
         ', время работы скрипта: ' + d.micros + ' мкс';
+}
+
+async function load(n) {
+    const s = st[n];
+    try {
+        const d = await ask(n + '/', new URLSearchParams({page: s.page, size: sizeSel.value}));
+        s.page = d.page;
+        s.pages = d.pages;
+        s.msg.textContent = '';
+        s.tb.innerHTML = '';
+        d.items.forEach(e => {
+            const tr = document.createElement('tr');
+            [e.x, e.y, e.r, e.hit ? 'Попадание' : 'Промах',
+                new Date(e.time).toLocaleString('ru-RU')].forEach((v, j) => {
+                const td = document.createElement('td');
+                td.textContent = v;
+                if (j === 3) td.className = e.hit ? 'hit' : 'miss';
+                tr.appendChild(td);
+            });
+            s.tb.appendChild(tr);
+        });
+        s.go.value = d.page;
+        s.num.textContent = d.pages;
+        save();
+        s.prev.disabled = d.page <= 1;
+        s.next.disabled = d.page >= d.pages;
+        tick(d);
+    } catch (err) {
+        if (s.page > 1 && err.message === texts['bad page']) {
+            s.page = 1;
+            return load(n);
+        }
+        s.msg.textContent = err.message;
+    }
 }
 
 document.querySelectorAll('input[name="r"]').forEach(e => {
@@ -172,11 +236,13 @@ form.addEventListener('submit', async e => {
 
     const q = new URLSearchParams({x: xSel.value, y: yInp.value.trim(), r: r});
     try {
-        const d = await ask(q);
-        const p = d.history[d.history.length - 1];
+        const d = await ask('', q);
+        const p = d.point;
         last = {x: p.x, y: p.y, hit: p.hit};
         draw(parseFloat(r));
-        show(d);
+        tick(d);
+        st[d.node].page = 1;
+        load(d.node);
     } catch (err) {
         yErr.textContent = err.message;
     }
@@ -184,6 +250,7 @@ form.addEventListener('submit', async e => {
 
 window.addEventListener('resize', resize);
 resize();
-ask('').then(show).catch(() => {
-    info.textContent = 'Сервер недоступен';
+sizeSel.addEventListener('change', () => {
+    Object.keys(st).forEach(n => { st[n].page = 1; load(n); });
 });
+Object.keys(st).forEach(load);
